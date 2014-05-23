@@ -8,12 +8,12 @@ namespace fifnotify
 	public class Watcher
 	{
 
-	    public static void Main()
-	    {
-	    	Run();
-	    }
+		public static void Main()
+		{
+			Run();
+		}
 
-	    [PermissionSet(SecurityAction.Demand, Name="FullTrust")]
+		[PermissionSet(SecurityAction.Demand, Name="FullTrust")]
 		public static void Run ()
 		{
 			string[] args = System.Environment.GetCommandLineArgs ();
@@ -30,7 +30,7 @@ namespace fifnotify
 
 			watcher.Path = args [1];
 			/* Watch for changes in LastAccess and LastWrite times, and
-	           the renaming of files or directories. */
+			   the renaming of files or directories. */
 			watcher.NotifyFilter =
 				NotifyFilters.LastAccess | NotifyFilters.LastWrite |
 				NotifyFilters.FileName | NotifyFilters.DirectoryName;
@@ -44,13 +44,13 @@ namespace fifnotify
 			watcher.Deleted += new FileSystemEventHandler (OnDeleted);
 			watcher.Renamed += new DeletedEventHandler(OnRenamed);
 
-	        // Begin watching.
-	        watcher.EnableRaisingEvents = true;
+			// Begin watching.
+			watcher.EnableRaisingEvents = true;
 
-	        // Wait for the user to quit the program.
-	        Console.WriteLine("Press \'q\' to quit the app.");
-	        while(Console.Read()!='q');
-	    }
+			// Wait for the user to quit the program.
+			Console.WriteLine("Press \'q\' to quit the app.");
+			while(Console.Read()!='q');
+		}
 
 
 
@@ -61,11 +61,11 @@ namespace fifnotify
 		private DeletedEventHandler onDelete;
 
 		public event DeletedEventHandler OnDelete
-	    {
+		{
 			// The add and remove accessors
 			add { onDelete += value; }
 			remove { onDelete -= value; }
-	    }
+		}
 
 		public void Delete(string filePath)
 		{
@@ -88,8 +88,8 @@ namespace fifnotify
 			}
 		}
 
-	    // Define event handlers.
-	    private static void OnChanged (object source, FileSystemEventArgs e)
+		// Define event handlers.
+		private static void OnChanged (object source, FileSystemEventArgs e)
 		{
 			// Notify, when a file is changed, or created.
 			Console.WriteLine ("File: " + e.FullPath + " " + e.ChangeType);
@@ -124,22 +124,22 @@ namespace fifnotify
 
 			// Wait for process to finish
 			command.WaitForExit ();
-	    }
+		}
 
-	    private static void OnRenamed(object source, RenamedEventArgs e)
-	    {
-	        // Do nothing, when a file is renamed.
-	        Console.WriteLine("File: {0} renamed to {1}, no need to recompile", e.OldFullPath, e.FullPath);
-	    }
+		private static void OnRenamed(object source, RenamedEventArgs e)
+		{
+			// Do nothing, when a file is renamed.
+			Console.WriteLine("File: {0} renamed to {1}, no need to recompile", e.OldFullPath, e.FullPath);
+		}
 
-	    private static void OnDeleted (object source, RenamedEventArgs e)
+		private static void OnDeleted (object source, RenamedEventArgs e)
 		{
 			// Delete corresonding *.html, when a file is deleted.
 			Console.WriteLine ("File: {0} deleted", e.OldFullPath);
 
 			// Try to delete the file
 			Delete(e.OldFullPath);
-	    }
+		}
 	}
 }
 
