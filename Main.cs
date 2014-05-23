@@ -1,4 +1,4 @@
-namespace fifnotify
+namespace notify
 {
 	using System;
 	using System.IO;
@@ -19,16 +19,16 @@ namespace fifnotify
 			string[] args = System.Environment.GetCommandLineArgs ();
 
 			// If a directory is not specified, exit program.
-			if (args.Length != 2) {
+			if (args.Length == 1) {
 				// Display the proper way to call the program.
-				Console.WriteLine ("Usage: Watcher.exe WorkingDirectory Path Command (Options)");
+				Console.WriteLine ("Usage: Notify.exe <Watched Path>");
 				return;
 			}
 
 			// Create a new FileSystemWatcher and set its properties.
 			FileSystemWatcher watcher = new FileSystemWatcher ();
 
-			watcher.Path = args [2];
+			watcher.Path = args [1];
 			/* Watch for changes in LastAccess and LastWrite times, and
 			   the renaming of files or directories. */
 			watcher.NotifyFilter =
@@ -39,11 +39,13 @@ namespace fifnotify
 			watcher.Filter = "*.pdf";
 
 			// Add event handlers.
-			watcher.Changed += new FileSystemEventHandler (OnChanged);
+			watcher.Changed += new FileSystemEventHandler (OnCreated);
 			watcher.Created += new FileSystemEventHandler (OnChanged);
 			watcher.Deleted += new FileSystemEventHandler (OnDeleted);
 			watcher.Renamed += new RenamedEventHandler(OnRenamed);
 
+			// Watch subfolders.
+			watcher.IncludeSubdirectories = true;
 			// Begin watching.
 			watcher.EnableRaisingEvents = true;
 
@@ -52,7 +54,28 @@ namespace fifnotify
 			while(Console.Read()!='q');
 		}
 
-		// Define event handlers.
+		private static void OnCreated(object source, FileSystemEventArgs e)
+		{
+		    if (e.ChangeType == WatcherChangeTypes.Created)
+		    {
+		        if (Directory.Exists(e.FullPath))
+		        {
+		            foreach (string file in Directory.GetFiles(e.FullPath))
+		            {
+		                var eventArgs = new FileSystemEventArgs(
+		                    WatcherChangeTypes.Created,
+		                    Path.GetDirectoryName(file),
+		                    Path.GetFileName(file));
+		                OnCreated(source, eventArgs);
+		            }
+		        }
+		        else
+		        {
+		            Console.WriteLine("{0} created.",e.FullPath);
+		        }
+		    }
+		}
+
 		private static void OnChanged (object source, FileSystemEventArgs e)
 		{
 			// Notify, when a file is changed, or created.
@@ -61,42 +84,27 @@ namespace fifnotify
 			// Create process
 			System.Diagnostics.Process command = new System.Diagnostics.Process ();
 
-			// Get command line arguments
-			string[] commandArgs = System.Environment.GetCommandLineArgs ();
-			string commandArgsExtra = "";
+			// Contains path and file name of command to run
+			command.StartInfo.FileName = "pdf2htmlEX";
 
-			// commandArgs contains path and file name of command to run
-			command.StartInfo.FileName = commandArgs [3];
-
-			// Additionally commandArgs contains the parameters to pass to program
-			//command.StartInfo.Arguments = string.Join (" ", commandArgs.Skip (2));
-			for(int i=3; i < commandArgs.Length; i++) {
-				commandArgsExtra += commandArgs[i];
-			}
-
-			command.StartInfo.Arguments = commandArgsExtra;
-
+			command.StartInfo.Arguments = String.Format(" --hdpi 96 --vdpi 96 --printing 1 --optimize-text 1 --process-outline 0 --bg-format jpg \"{0}\"", e.FullPath);
 			command.StartInfo.UseShellExecute = false;
 
 			// Set output of program to be written to process output stream
 			command.StartInfo.RedirectStandardOutput = true;
 
-			// Optionally pass working directory
-			if (string.IsNullOrEmpty(commandArgs [1]) ) {
-				command.StartInfo.WorkingDirectory = commandArgs[1];
-			}
+			// Pass working directory
+			string workingDir = Path.GetDirectoryName(e.FullPath);
+			command.StartInfo.WorkingDirectory = workingDir;
 
 			// Start the process
 			command.Start ();
 
 			// Get program output
-			string strOutput = command.StandardOutput.ReadToEnd ();
+			command.StandardOutput.ReadToEnd ();
 
 			// Wait for process to finish
 			command.WaitForExit ();
-
-			// Show output for processed files
-			Console.WriteLine ("Log: {0}", strOutput);
 		}
 
 		private static void OnRenamed(object source, RenamedEventArgs e)
@@ -111,13 +119,11 @@ namespace fifnotify
 			Console.WriteLine ("File: {0} deleted", e.FullPath);
 
 			// Swap filename with that of the target format
-			string newExt = "html";
-			string OldFileName = Path.GetFileNameWithoutExtension(e.FullPath) + newExt;
+			string OldFileName = Path.GetDirectoryName(e.FullPath) + "/" + Path.GetFileNameWithoutExtension(e.FullPath) + ".html";
 
 			// Try to delete the old file
+			Console.WriteLine ("File: {0} deleted", OldFileName);
 			File.Delete(OldFileName);
 		}
 	}
 }
-
-
