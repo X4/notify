@@ -21,14 +21,14 @@ namespace fifnotify
 			// If a directory is not specified, exit program.
 			if (args.Length != 2) {
 				// Display the proper way to call the program.
-				Console.WriteLine ("Usage: Watcher.exe (working directory) path command");
+				Console.WriteLine ("Usage: Watcher.exe WorkingDirectory Path Command (Options)");
 				return;
 			}
 
 			// Create a new FileSystemWatcher and set its properties.
 			FileSystemWatcher watcher = new FileSystemWatcher ();
 
-			watcher.Path = args [1];
+			watcher.Path = args [2];
 			/* Watch for changes in LastAccess and LastWrite times, and
 			   the renaming of files or directories. */
 			watcher.NotifyFilter =
@@ -66,11 +66,11 @@ namespace fifnotify
 			string commandArgsExtra = "";
 
 			// commandArgs contains path and file name of command to run
-			command.StartInfo.FileName = commandArgs [2];
+			command.StartInfo.FileName = commandArgs [3];
 
 			// Additionally commandArgs contains the parameters to pass to program
 			//command.StartInfo.Arguments = string.Join (" ", commandArgs.Skip (2));
-			for(int i=2; i < commandArgs.Length; i++) {
+			for(int i=3; i < commandArgs.Length; i++) {
 				commandArgsExtra += commandArgs[i];
 			}
 
