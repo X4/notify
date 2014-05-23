@@ -108,10 +108,14 @@ namespace fifnotify
 		private static void OnDeleted (object source, FileSystemEventArgs e)
 		{
 			// Delete corresonding *.html, when a file is deleted.
-			Console.WriteLine ("File: {0} deleted", e.OldFullPath);
+			Console.WriteLine ("File: {0} deleted", e.FullPath);
 
-			// Try to delete the file
-			File.Delete(e.OldFullPath);
+			// Swap filename with that of the target format
+			string newExt = "html";
+			string OldFileName = Path.GetFileNameWithoutExtension(e.FullPath) + newExt;
+
+			// Try to delete the old file
+			File.Delete(OldFileName);
 		}
 	}
 }
