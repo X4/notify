@@ -42,7 +42,7 @@ namespace fifnotify
 			watcher.Changed += new FileSystemEventHandler (OnChanged);
 			watcher.Created += new FileSystemEventHandler (OnChanged);
 			watcher.Deleted += new FileSystemEventHandler (OnDeleted);
-			watcher.Renamed += new DeletedEventHandler(OnRenamed);
+			watcher.Renamed += new RenamedEventHandler(OnRenamed);
 
 			// Begin watching.
 			watcher.EnableRaisingEvents = true;
@@ -52,59 +52,29 @@ namespace fifnotify
 			while(Console.Read()!='q');
 		}
 
-
-
-		// This is the delegate. Any instance with DeletedEventHandler type
-		// can point a method which returns voids and accepts parameters (object,bool)
-		public delegate void DeletedEventHandler(object sender, bool deleted);
-
-		private DeletedEventHandler onDelete;
-
-		public event DeletedEventHandler OnDelete
-		{
-			// The add and remove accessors
-			add { onDelete += value; }
-			remove { onDelete -= value; }
-		}
-
-		public void Delete(string filePath)
-		{
-			try
-			{
-				File.Delete(filePath);
-				RaiseOnDelete(true);
-			}
-			catch
-			{
-				RaiseOnDelete(false);
-			}
-		}
-
-		private void RaiseOnDelete (bool deleted)
-		{
-			if (onDelete != null) {
-				// All methods added execute here
-				onDelete(this, deleted);
-			}
-		}
-
 		// Define event handlers.
 		private static void OnChanged (object source, FileSystemEventArgs e)
 		{
 			// Notify, when a file is changed, or created.
-			Console.WriteLine ("File: " + e.FullPath + " " + e.ChangeType);
+			Console.WriteLine ("File changed: " + e.FullPath + " " + e.ChangeType);
 
 			// Create process
 			System.Diagnostics.Process command = new System.Diagnostics.Process ();
 
 			// Get command line arguments
 			string[] commandArgs = System.Environment.GetCommandLineArgs ();
+			string commandArgsExtra = "";
 
 			// commandArgs contains path and file name of command to run
 			command.StartInfo.FileName = commandArgs [2];
 
 			// Additionally commandArgs contains the parameters to pass to program
-			command.StartInfo.Arguments = string.Join (" ", commandArgs.Skip (2));
+			//command.StartInfo.Arguments = string.Join (" ", commandArgs.Skip (2));
+			for(int i=2; i < commandArgs.Length; i++) {
+				commandArgsExtra += commandArgs[i];
+			}
+
+			command.StartInfo.Arguments = commandArgsExtra;
 
 			command.StartInfo.UseShellExecute = false;
 
@@ -124,6 +94,9 @@ namespace fifnotify
 
 			// Wait for process to finish
 			command.WaitForExit ();
+
+			// Show output for processed files
+			Console.WriteLine ("Log: {0}", strOutput);
 		}
 
 		private static void OnRenamed(object source, RenamedEventArgs e)
@@ -132,13 +105,13 @@ namespace fifnotify
 			Console.WriteLine("File: {0} renamed to {1}, no need to recompile", e.OldFullPath, e.FullPath);
 		}
 
-		private static void OnDeleted (object source, RenamedEventArgs e)
+		private static void OnDeleted (object source, FileSystemEventArgs e)
 		{
 			// Delete corresonding *.html, when a file is deleted.
 			Console.WriteLine ("File: {0} deleted", e.OldFullPath);
 
 			// Try to delete the file
-			Delete(e.OldFullPath);
+			File.Delete(e.OldFullPath);
 		}
 	}
 }
